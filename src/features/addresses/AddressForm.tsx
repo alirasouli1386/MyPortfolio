@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { Button, Container, Dropdown, DropdownItemProps, Form, StrictHeaderProps } from "semantic-ui-react";
+import React, { FormEvent, useEffect, useState } from "react";
+import { Button, Container, Dropdown, DropdownItemProps, DropdownProps, Form, StrictHeaderProps } from "semantic-ui-react";
+import { v4 as uuid } from "uuid";
 import { EMode } from "../../app/api/EMode";
 import apiAgent from "../../app/api/apiAgent";
 import { IAddress } from "../../app/model/address";
@@ -11,102 +12,165 @@ interface IProps {
     handleHeadline: (update: string, color: StrictHeaderProps["color"]) => void
 }
 
-
 export const AddressForm: React.FC<IProps> = ({ id, handleModeChange, handleHeadline }) => {
+    handleHeadline(id === "" ? "Create a new Address" : "Update existing Address", "black")
+
     const countriesAgent = apiAgent.CountriesAPIAgent
     const addressesAgent = apiAgent.AddressesAPIAgent
 
-    const [countries, setCountries] = useState<ICountry[]>()
-    const [address, setAddress] = useState<IAddress>()
-
-    let countriesOptions: DropdownItemProps[] = [];
-
-    handleHeadline(id === "" ? "Create a new Address" : "Update existing Address", "black")
-
+    const [address, setAddress] = useState<IAddress>({
+        id: "",
+        title: "",
+        number: "",
+        street: "",
+        suburb: "",
+        city: "",
+        state: "",
+        postCode: "",
+        poBox: ""
+    })
+    const [selectedCountry, setSelectedCountry] = useState<string>("")
     useEffect(() => {
-        countriesAgent.list().then(response => {
-            setCountries(response)
-        })
-
         if (id !== "") {
             addressesAgent.details(id).then(response => {
-                setAddress(response)
+                let loadedAddress = {
+                    id: response.id,
+                    title: response.title,
+                    number: response.number,
+                    street: response.street,
+                    suburb: response.suburb,
+                    city: response.city,
+                    state: response.state,
+                    postCode: response.postCode,
+                    poBox: response.poBox
+                }
+                setAddress(loadedAddress)
+                setSelectedCountry(response.countryId ?? "")
             })
         }
+    }, [addressesAgent, id])
 
-    }, [countriesAgent, addressesAgent, id])
+    const [countriesOptions, setCountriesOptions] = useState<DropdownItemProps[]>(
+        [{ "key": "", "value": "", "flag": "", "text": "" }]
+    )
+    useEffect(() => {
+        countriesAgent.list().then(response => {
+            let countries: ICountry[] = response
+            let options: DropdownItemProps[] = []
 
-    countries?.forEach(country => {
-        countriesOptions.push({ key: country.id, value: country.alpha2.toLowerCase(), flag: country.alpha2.toLowerCase(), text: country.name })
-    })
-    countriesOptions.sort((a, b) => ('' + a.text).localeCompare('' + b.text))
+            countries.forEach(country => {
+                options.push({ key: country.id, value: country.id.toLowerCase(), flag: country.alpha2.toLowerCase(), text: country.name })
+            })
+
+            options.sort((a, b) => ('' + a.text).localeCompare('' + b.text))
+            setCountriesOptions(options)
+        })
+    }, [countriesAgent])
+
+    const handleInputChange = (event: FormEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = event.currentTarget
+        setAddress({ ...address, [name]: value })
+    }
+
+    const handleCountryChange = (event: FormEvent<HTMLElement>, data: DropdownProps) => {
+        setSelectedCountry(data.value!.toString())
+        setAddress({ ...address, countryId: data.value!.toString() })
+    }
+
+    const handleSubmit = () => {
+        if (address.id.length === 0) {
+            let newAddress = { ...address, id: uuid() }
+            addressesAgent.create(newAddress)
+            handleHeadline(`A new address titled "${newAddress.title}" has been created.`, "teal")
+        } else {
+            /*
+    
+            LOG UPDATE 
+            
+            */
+            //console.log(address)
+            addressesAgent.update(address)
+            handleHeadline(`An address titled "${address.title}" has been updated.`, "green")
+        }
+        handleModeChange(EMode.List, "")
+    }
 
     return (
         <Container>
-            <Form>
+            <Form onSubmit={handleSubmit}>
                 <Form.Field>
                     <label>Title</label>
-                    <input placeholder='Title' value={address?.title ?? ""} />
+                    <input placeholder='Title'
+                        value={address.title}
+                        name="title"
+                        onChange={handleInputChange} />
                 </Form.Field>
                 <Form.Field>
                     <label>Number</label>
-                    <input placeholder='Number' value={address?.number ?? ""} />
+                    <input placeholder='Number'
+                        name="number"
+                        value={address.number}
+                        onChange={handleInputChange} />
                 </Form.Field>
                 <Form.Field>
                     <label>Street</label>
-                    <input placeholder='Street' value={address?.street ?? ""} />
+                    <input placeholder='Street'
+                        name="street"
+                        value={address.street}
+                        onChange={handleInputChange} />
                 </Form.Field>
                 <Form.Field>
                     <label>Suburb</label>
-                    <input placeholder='Title' value={address?.suburb ?? ""} />
+                    <input placeholder='Suburb'
+                        name="suburb"
+                        value={address.suburb}
+                        onChange={handleInputChange} />
                 </Form.Field>
                 <Form.Field>
                     <label>City</label>
-                    <input placeholder='City' value={address?.city ?? ""} />
+                    <input placeholder='City'
+                        name="city"
+                        value={address.city}
+                        onChange={handleInputChange} />
                 </Form.Field>
                 <Form.Field>
                     <label>State/Province</label>
-                    <input placeholder='State/Province' value={address?.title ?? ""} />
+                    <input placeholder='State/Province'
+                        name="state"
+                        value={address.state}
+                        onChange={handleInputChange} />
                 </Form.Field>
                 <Form.Field>
                     <label>Country</label>
                     <Dropdown
                         placeholder='Select Country'
-                        fluid
+                        name="country"
+                        selectOnBlur={false}
+                        floating
                         search
-                        selection
+                        value={selectedCountry}
                         options={countriesOptions}
+                        onChange={handleCountryChange}
                     />
                 </Form.Field>
                 <Form.Field>
                     <label>Post Code</label>
-                    <input placeholder='Post Code' value={address?.postCode ?? ""} />
+                    <input placeholder='Post Code'
+                        name="postCode"
+                        value={address.postCode}
+                        onChange={handleInputChange} />
                 </Form.Field>
                 <Form.Field>
                     <label>P.O.Box</label>
-                    <input placeholder='P.O.Box' value={address?.poBox ?? ""} />
+                    <input placeholder='P.O.Box'
+                        name="poBox"
+                        value={address.poBox}
+                        onChange={handleInputChange} />
                 </Form.Field>
                 <Button.Group fluid>
                     <Button content='submit' icon="upload" type='submit' color='green' />
                 </Button.Group>
-
             </Form>
         </Container>
     )
-
 }
-
-/*
-export interface IAddress {
-    id: string;
-    title: string;
-    number?: string;
-    street?: string;
-    suburb?: string;
-    city?: string;
-    state?: string;
-    country?: ICountry;
-    postCode?: string;
-    poBox?: string
-}
-*/

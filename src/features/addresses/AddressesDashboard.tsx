@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button, Container, Divider, Header, Icon, StrictHeaderProps } from 'semantic-ui-react';
 import { EMode } from '../../app/api/EMode';
 import { AddressDetails } from './AddressDetails';
@@ -11,10 +11,6 @@ export const AddressesDashboard: React.FC = () => {
     const [id, setId] = useState<string>("")
     const [headline, setHeadline] = useState<string>("")
     const [headlineColor, setHeadlineColor] = useState<StrictHeaderProps["color"]>("black")
-
-    useEffect(() => {
-
-    }, [])
 
 
     const onModeChange = (mode: EMode, id: string = "") => {
@@ -68,18 +64,24 @@ export const AddressesDashboard: React.FC = () => {
 
     return (
         <Container>
-            <Header as='h3' color={headlineColor} block>
-                <Container textAlign='left' as='a' onClick={() => setMode(EMode.List)}>
+            {headline.length > 0 &&
+                <Container textAlign='left' as='a'
+                    onClick={() => {
+                        setMode(EMode.List)
+                        setHeadline("")
+                    }}>
                     {mode !== EMode.List &&
                         <Icon.Group size='large'>
                             <Icon loading size='large' name='circle notch' color="black" />
                             <Icon name='arrow left' color="black" />
                         </Icon.Group>
                     }
-                    {headline}
+                    <Header Header as='h3' color={headlineColor} block>
+                        {headline}
+                    </Header>
                 </Container>
-            </Header>
+            }
             {renderMode()}
-        </Container>
+        </Container >
     )
 }

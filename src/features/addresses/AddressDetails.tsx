@@ -28,11 +28,17 @@ export const AddressDetails: React.FC<IProps> = ({ id, handleModeChange, handleH
         try {
             const title = address?.title
             agent.delete(id).then(() => {
-                handleHeadline(`Successfully removed address titled "${title}".`, "violet")
-                handleModeChange(EMode.List, "")
+                if (agent.details(id).then(response => {
+                    if (response.id === undefined)
+                        handleHeadline(`Successfully removed address titled "${title}".`, "red")
+                    else
+                        handleHeadline(`Failed to remove address titled "${title}". Perhaps the address is used by other resources.`, "red")
+                }))
+
+                    handleModeChange(EMode.List, "")
             })
         } catch (error) {
-            handleHeadline("Could not delete address. Perhaps the address is used by other resources.", "red")
+            handleHeadline("Could not delete address. Perhaps the address is used by other resources. If this is not the case, contact Administrator for the issue.", "violet")
             handleModeChange(EMode.List, id)
         }
     }

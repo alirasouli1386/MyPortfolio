@@ -14,8 +14,6 @@ export const AddressesList: React.FC<IProp> = ({ handleModeChange, handleHeadlin
 
     const [addressesList, setAddressesList] = useState<IAddress[]>([]);
 
-    handleHeadline("Addresses List", "black")
-
     useEffect(() => {
         agent.list().then((response) => {
             setAddressesList(response)

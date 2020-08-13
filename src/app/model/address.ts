@@ -8,6 +8,7 @@ export interface IAddress {
     suburb?: string;
     city?: string;
     state?: string;
+    countryId?: string;
     country?: ICountry;
     postCode?: string;
     poBox?: string
