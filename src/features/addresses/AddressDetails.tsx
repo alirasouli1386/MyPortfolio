@@ -2,44 +2,50 @@ import React, { useEffect, useState } from "react";
 import { Button, Container, Divider, Grid, Header, Icon, Image, Label, Modal, Segment, StrictHeaderProps } from "semantic-ui-react";
 import { IAddress } from '../../app/model/address'
 import apiAgent from '../../app/api/apiAgent'
-import { EMode } from "../../app/api/EMode";
+import { NavLink, useHistory, useParams } from "react-router-dom";
 
 interface IProps {
     id: string;
-    handleModeChange: (mode: EMode, id: string) => void
-    handleHeadline: (update: string, color: StrictHeaderProps["color"]) => void
+    handleId: (id: string) => void
+    handleAdminHeadline: (headline: string, headlineColor: StrictHeaderProps["color"]) => void
 }
 
-export const AddressDetails: React.FC<IProps> = ({ id, handleModeChange, handleHeadline }) => {
+export const AddressDetails: React.FC<IProps> = ({ id, handleId, handleAdminHeadline }) => {
     const agent = apiAgent.AddressesAPIAgent
+    let history = useHistory();
+    let urlParams: any = useParams();
 
     const [address, setAddress] = useState<IAddress>()
     const [deleteModal, setDeleteModal] = useState<boolean>(false)
 
-    handleHeadline("Address Details", "black")
-
     useEffect(() => {
+        handleAdminHeadline('Address Details', 'black')
+
+        if (id === "") {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            id = urlParams.id?.toString();
+            handleId(id)
+        }
+
         agent.details(id).then(response => {
             setAddress(response)
         })
-    }, [agent, id])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const onAddressDelete = () => {
         try {
             const title = address?.title
             agent.delete(id).then(() => {
-                if (agent.details(id).then(response => {
+                agent.details(id).then(response => {
                     if (response.id === undefined)
-                        handleHeadline(`Successfully removed address titled "${title}".`, "red")
+                        handleAdminHeadline(`Successfully removed address titled "${title}".`, 'red')
                     else
-                        handleHeadline(`Failed to remove address titled "${title}". Perhaps the address is used by other resources.`, "red")
-                }))
-
-                    handleModeChange(EMode.List, "")
+                        handleAdminHeadline(`Failed to remove address titled "${title}". Perhaps the address is used by other resources.`, 'red')
+                })
             })
         } catch (error) {
-            handleHeadline("Could not delete address. Perhaps the address is used by other resources. If this is not the case, contact Administrator for the issue.", "violet")
-            handleModeChange(EMode.List, id)
+            handleAdminHeadline("Could not delete address. Perhaps the address is used by other resources. If this is not the case, contact Administrator for the issue.", 'violet')
         }
     }
 
@@ -54,7 +60,7 @@ export const AddressDetails: React.FC<IProps> = ({ id, handleModeChange, handleH
                         <Label attached='top right'>Address Details</Label>
                         <Header size='large'>{address?.title}</Header>
                         <Label>
-                            {address?.number ? `No ${address.number},` : ""} {address?.street ? `${address.street},` : ""} {address?.suburb ? `${address.suburb},` : ""} {address?.city ? `${address.city},` : ""} {address?.state ? `${address.state},` : ""} {address?.country?.name ?? ""}
+                            {address?.number ? `No ${address.number},` : ""} {address?.street ? `${address.street},` : ""} {address?.suburb ? `${address.suburb},` : ""} {address?.city ? `${address.city},` : ""} {address?.state ? `${address.state},` : ""} {address?.country?.name ?? ""} {address?.poBox ? `; P.O.Box ${address.poBox}` : ""}
                         </Label>
                     </Grid.Column>
                 </Grid>
@@ -64,7 +70,11 @@ export const AddressDetails: React.FC<IProps> = ({ id, handleModeChange, handleH
                 </Divider>
 
                 <Button.Group fluid>
-                    <Button content="Update" onClick={() => handleModeChange(EMode.Update, id)} color="green" icon="table" />
+                    <Button as={NavLink} to={`/admin/addresses/update/${id}`}
+                        content="Update" color="green" icon="table"
+                        onClick={() => {
+                            handleId(id)
+                        }} />
                     <Button.Or />
                     <Modal
                         trigger={<Button content={<del>Delete</del>} color="red" onClick={() => setDeleteModal(true)} icon="delete" />}
@@ -79,7 +89,11 @@ export const AddressDetails: React.FC<IProps> = ({ id, handleModeChange, handleH
                         </Modal.Content>
                         <Modal.Actions>
                             <Button basic onClick={() => setDeleteModal(false)} color='grey' inverted>Cancel</Button>
-                            <Button color='red' inverted onClick={() => onAddressDelete()}>
+                            <Button color='red' inverted
+                                onClick={() => {
+                                    onAddressDelete()
+                                    history.push("/admin/addresses/")
+                                }}>
                                 <Icon name='remove' /> Delete
                             </Button>
                         </Modal.Actions>

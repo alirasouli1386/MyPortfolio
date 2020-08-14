@@ -1,87 +1,53 @@
-import React, { useState } from 'react';
-import { Button, Container, Divider, Header, Icon, StrictHeaderProps } from 'semantic-ui-react';
-import { EMode } from '../../app/api/EMode';
+import React, { Fragment, useState } from 'react';
+import { NavLink, Route, Switch } from 'react-router-dom';
+import { Button, Container, Divider, StrictHeaderProps } from 'semantic-ui-react';
 import { AddressDetails } from './AddressDetails';
 import { AddressesList } from './AddressesList';
 import { AddressForm } from './AddressForm';
 
-export const AddressesDashboard: React.FC = () => {
+interface IProps {
+    handleAdminHeadline: (active: boolean, header: string | undefined, headerColor: StrictHeaderProps["color"] | undefined) => void;
+}
 
-    const [mode, setMode] = useState<EMode>(EMode.List)
+export const AddressesDashboard: React.FC<IProps> = ({ handleAdminHeadline }) => {
     const [id, setId] = useState<string>("")
-    const [headline, setHeadline] = useState<string>("")
-    const [headlineColor, setHeadlineColor] = useState<StrictHeaderProps["color"]>("black")
 
-
-    const onModeChange = (mode: EMode, id: string = "") => {
-        setMode(mode)
-        if (id !== "") { setId(id) }
+    const onIdChange = (id: string) => {
+        setId(id)
     }
 
-    const onHeadlineUpdate = (update: string, color: StrictHeaderProps["color"]) => {
-        setHeadline(update)
-        setHeadlineColor(color)
-    }
-
-    const renderMode = () => {
-        switch (mode) {
-            case EMode.List:
-                return (
-                    <Container>
-                        <Divider horizontal>
-                            <Button content="Create a new Address" onClick={() => onModeChange(EMode.Create, "")} color="teal" icon="home" />
-                        </Divider>
-                        <AddressesList
-                            handleModeChange={onModeChange}
-                            handleHeadline={onHeadlineUpdate}
-                        />
-                    </Container>
-                )
-            case EMode.Details:
-            case EMode.Delete:
-                return (
-                    <AddressDetails
-                        id={id}
-                        handleModeChange={onModeChange}
-                        handleHeadline={onHeadlineUpdate}
-                    />)
-            case EMode.Create:
-                return (
-                    <AddressForm
-                        id={""}
-                        handleModeChange={onModeChange}
-                        handleHeadline={onHeadlineUpdate}
-                    />)
-            case EMode.Update:
-                return (
-                    <AddressForm
-                        id={id}
-                        handleModeChange={onModeChange}
-                        handleHeadline={onHeadlineUpdate}
-                    />)
-        }
+    const onHeadlineUpdate = (headline: string, headlineColor: StrictHeaderProps["color"]) => {
+        handleAdminHeadline(headline === "" ? false : true, headline, headlineColor)
     }
 
     return (
         <Container>
-            {headline.length > 0 &&
-                <Container textAlign='left' as='a'
-                    onClick={() => {
-                        setMode(EMode.List)
-                        setHeadline("")
-                    }}>
-                    {mode !== EMode.List &&
-                        <Icon.Group size='large'>
-                            <Icon loading size='large' name='circle notch' color="black" />
-                            <Icon name='arrow left' color="black" />
-                        </Icon.Group>
-                    }
-                    <Header Header as='h3' color={headlineColor} block>
-                        {headline}
-                    </Header>
-                </Container>
-            }
-            {renderMode()}
-        </Container >
+            <Switch>
+                <Route exact path={"/admin/addresses"} render={() => (
+                    <Fragment>
+                        <Divider horizontal>
+                            <Button as={NavLink} to="/admin/addresses/create"
+                                content="Create a new Address"
+                                onClick={() => { handleAdminHeadline(true, 'Create a new Address', 'teal') }}
+                                color="teal" icon="home" />
+                        </Divider>
+                        <AddressesList handleId={onIdChange} handleAdminHeadline={onHeadlineUpdate} />
+                    </Fragment>
+                )} />
+
+                <Route path="/admin/addresses/details/:id" render={() => (
+                    <Fragment>
+                        <AddressDetails id={id} handleId={onIdChange} handleAdminHeadline={onHeadlineUpdate} />
+                    </Fragment>)} />
+                <Route path="/admin/addresses/create" render={() => (
+                    <Fragment>
+                        <AddressForm id={""} handleAdminHeadline={onHeadlineUpdate} />
+                    </Fragment>)} />
+                <Route path="/admin/addresses/update/:id" render={() => (
+                    <Fragment>
+                        <AddressForm id={id} handleAdminHeadline={onHeadlineUpdate} />
+                    </Fragment>)} />
+            </Switch>
+        </Container>
     )
 }

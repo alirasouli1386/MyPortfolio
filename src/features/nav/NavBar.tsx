@@ -14,8 +14,8 @@ export const NavBar = () => {
                 </Menu.Item>
                 <Menu.Item
                     name='messages'
-                    as={NavLink} to="/addresses">
-                    Addresses
+                    as={NavLink} to="/admin">
+                    Admin Panel
                 </Menu.Item>
                 <Menu.Menu position='right'>
                     <Menu.Item>

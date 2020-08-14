@@ -21,7 +21,7 @@ const CountriesAPIAgent = {
 const AddressesAPIAgent = {
     list: (): Promise<IAddress[]> => request.get("/addresses"),
     details: (id: string): Promise<IAddress> => request.get(`/addresses/${id}`),
-    create: (address: IAddress) => request.post('/addresses', JSON.stringify(address)),
+    create: (address: IAddress) => request.post('/addresses', address),
     update: (address: IAddress) => request.put(`/addresses/${address.id}`, address),
     delete: (id: string) => request.delete(`/addresses/${id}`)
 }

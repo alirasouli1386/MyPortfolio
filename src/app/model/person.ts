@@ -1,5 +1,4 @@
 import { ICountry } from "./country";
-import { IVisa } from "./visa";
 import { IAddress } from "./address";
 
 export interface IPerson {
@@ -18,7 +17,6 @@ export interface IPerson {
     gender?: string;
     maritalStatus?: string;
     currentResidence?: ICountry;
-    currentVisa?: IVisa;
     address?: IAddress;
     mobilePhoneNo?: string;
     workEmail?: string;

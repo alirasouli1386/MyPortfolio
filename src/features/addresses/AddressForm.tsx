@@ -1,22 +1,26 @@
 import React, { FormEvent, useEffect, useState } from "react";
+import { useHistory } from "react-router-dom";
 import { Button, Container, Dropdown, DropdownItemProps, DropdownProps, Form, StrictHeaderProps } from "semantic-ui-react";
 import { v4 as uuid } from "uuid";
-import { EMode } from "../../app/api/EMode";
 import apiAgent from "../../app/api/apiAgent";
 import { IAddress } from "../../app/model/address";
 import { ICountry } from "../../app/model/country";
 
 interface IProps {
     id: string;
-    handleModeChange: (mode: EMode, id: string) => void;
-    handleHeadline: (update: string, color: StrictHeaderProps["color"]) => void
+    handleAdminHeadline: (headline: string, headlineColor: StrictHeaderProps["color"]) => void
 }
 
-export const AddressForm: React.FC<IProps> = ({ id, handleModeChange, handleHeadline }) => {
-    handleHeadline(id === "" ? "Create a new Address" : "Update existing Address", "black")
-
+export const AddressForm: React.FC<IProps> = ({ id, handleAdminHeadline }) => {
     const countriesAgent = apiAgent.CountriesAPIAgent
     const addressesAgent = apiAgent.AddressesAPIAgent
+
+    let history = useHistory();
+
+    useEffect(() => {
+        id === "" ? handleAdminHeadline('Create a new Address', 'teal') : handleAdminHeadline('Update an existing Address', 'black')
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const [address, setAddress] = useState<IAddress>({
         id: "",
@@ -26,6 +30,7 @@ export const AddressForm: React.FC<IProps> = ({ id, handleModeChange, handleHead
         suburb: "",
         city: "",
         state: "",
+        countryId: undefined,
         postCode: "",
         poBox: ""
     })
@@ -41,6 +46,7 @@ export const AddressForm: React.FC<IProps> = ({ id, handleModeChange, handleHead
                     suburb: response.suburb,
                     city: response.city,
                     state: response.state,
+                    countryId: response.countryId,
                     postCode: response.postCode,
                     poBox: response.poBox
                 }
@@ -79,20 +85,15 @@ export const AddressForm: React.FC<IProps> = ({ id, handleModeChange, handleHead
 
     const handleSubmit = () => {
         if (address.id.length === 0) {
-            let newAddress = { ...address, id: uuid() }
+            const newId = uuid()
+            let newAddress = { ...address, id: newId }
             addressesAgent.create(newAddress)
-            handleHeadline(`A new address titled "${newAddress.title}" has been created.`, "teal")
+            handleAdminHeadline(`A new address titled "${newAddress.title}" has been created.`, 'teal')
         } else {
-            /*
-    
-            LOG UPDATE 
-            
-            */
-            //console.log(address)
             addressesAgent.update(address)
-            handleHeadline(`An address titled "${address.title}" has been updated.`, "green")
+            handleAdminHeadline(`An address titled "${address.title}" has been updated.`, 'green')
         }
-        handleModeChange(EMode.List, "")
+        history.goBack()
     }
 
     return (
